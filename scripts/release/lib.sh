@@ -85,14 +85,17 @@ confirm() {
   if [ ! -t 0 ]; then
     die "这不是交互终端。确认没问题就加 ASSUME_YES=1 重跑，或者先 DRY_RUN=1 看一遍。"
   fi
-  printf '\n%s\n继续吗？输入 yes 回车：' "$1"
+  printf '\n%s\n继续吗？输入 y 或 yes 回车：' "$1"
   local answer=""
   read -r answer
-  [ "$answer" = "yes" ] || die "已取消，什么都没改。"
+  case "$(printf '%s' "$answer" | tr -d '[:space:]')" in
+    y|Y|yes|YES|Yes|是|好) ;;
+    *) die "已取消，什么都没改。" ;;
+  esac
 }
 
 dry() { [ "${DRY_RUN:-0}" = "1" ]; }
 
 run() {
-  if dry; then printf '  [dry-run] %s\n' "$*"; else "$@"; fi
+  if dry; then printf '  [试跑] %s\n' "$*"; else "$@"; fi
 }

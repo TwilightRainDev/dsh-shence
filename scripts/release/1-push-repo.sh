@@ -6,7 +6,7 @@
 #
 # 用法：
 #   export GITHUB_TOKEN=...
-#   bash scripts/release/1-push-repo.sh             # 会先干跑一遍给你看
+#   bash scripts/release/1-push-repo.sh             # 会先试跑一遍给你看
 #   DRY_RUN=0 bash scripts/release/1-push-repo.sh    # 真推
 #
 # 可选：GITHUB_OWNER=TwilightRainDev GITHUB_REPO=dsh-shence
@@ -22,7 +22,7 @@ require_github_token
 say "仓库：$OWNER/$REPO"
 say "分支：$(git rev-parse --abbrev-ref HEAD)"
 say "提交：$(git log -1 --format='%h %s')"
-say "模式：$([ "$DRY_RUN" = "1" ] && echo '干跑（不发请求、不推送）' || echo '真跑')"
+say "模式：$([ "$DRY_RUN" = "1" ] && echo '试跑（只看不做）' || echo '真跑')"
 
 say ""
 say "1) 确认远端仓库"
@@ -33,7 +33,7 @@ else
   say "   不存在，需要新建一个公开仓库"
   confirm "要在 $OWNER 名下建公开仓库 $REPO 吗？建了就公开可搜。"
   if dry; then
-    say "   [dry-run] POST /user/repos {name:$REPO, private:false}"
+    say "   [试跑] POST /user/repos {name:$REPO, private:false}"
   else
     payload="$(mktemp)"
     python3 -c '
@@ -63,7 +63,7 @@ else
   run git remote add origin "https://github.com/$OWNER/$REPO.git"
 fi
 if dry; then
-  say "  [dry-run] 会用临时 askpass 推 main（令牌不写进 .git/config）"
+  say "  [试跑] 会用临时 askpass 推 main（令牌不写进 .git/config）"
 else
   askpass="$(mktemp)"
   chmod 700 "$askpass"
@@ -91,7 +91,7 @@ print(json.dumps({"names":names}))
 '
 )"
 if dry; then
-  say "  [dry-run] PUT /repos/$OWNER/$REPO/topics $merged"
+  say "  [试跑] PUT /repos/$OWNER/$REPO/topics $merged"
 else
   payload="$(mktemp)"
   printf '%s' "$merged" > "$payload"

@@ -1,4 +1,4 @@
-# 沈策又过了一天 · DSH 插件
+# 沈策又过了一天：DSH 插件
 
 把这份单文件网页文字游戏装进 [DSH](https://github.com/deepseek-ai/deepseek-harness) 的界面里：
 网页版侧栏多一个面板，DSH Go 里以网页岛打开。游戏本身一行没改，离线可玩。
@@ -71,7 +71,7 @@ npm test        # 离线自检：字节一致性、清单、注册的面板、�
 npm run check   # 语法检查
 ```
 
-发布与上架不用记事本照着做，`scripts/release/` 下有四个脚本（默认干跑，看清楚再真跑），
+发布与上架不用记事本照着做，`scripts/release/` 下有四个脚本（默认试跑，看清楚再真跑），
 用法写在 `scripts/release/README.md`：
 
 ```sh
@@ -92,10 +92,10 @@ scripts/build.mjs  构建脚本
 test/              离线自检
 screenshots/       上架用的界面截图
 market/            上架申请材料（entry.json 与提交流程，不随 npm 包发布）
-scripts/release/   发布脚本（默认干跑）
+scripts/release/   发布脚本（默认试跑）
 ```
 
-改游戏内容的流程：换掉 `assets/game.html` → 改 `test/plugin.test.js` 里记的 sha256 → `npm run build` → `npm test`。
+改游戏内容的流程：换掉 `assets/game.html`，同步改掉 `test/plugin.test.js` 里记的 sha256，然后跑 `npm run build` 和 `npm test`。
 
 ## 许可
 

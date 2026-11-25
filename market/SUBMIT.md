@@ -3,7 +3,7 @@
 官方市场的规则以 [`ccch1mneyyy/dsh-go-market`](https://github.com/ccch1mneyyy/dsh-go-market) 仓库为准，
 本文只是把这次的条目和步骤抄成一份清单。四个状态互相独立，一步一步核：
 
-npm 已发布 → dshfind 索引有条目 → 官方市场索引有条目 → App 里能装。
+先 npm 已发布，再 dshfind 索引有条目，再官方市场索引有条目，最后 App 里能装。
 
 **不想手动复制命令就走脚本**：`scripts/release/` 下四个脚本把下面第 1–4 节做完了，
 用法见 `scripts/release/README.md`。想自己一步步来，就照着本文走。
@@ -99,7 +99,7 @@ New entry: plugins/@twilightrain__dsh-shence.json
 
 市场的静态扫描只看代码特征，不打分、不封禁。这个包预计会被标：
 
-- 大型压缩/编码源码（`lib/client.js` 里那段 base64 的游戏网页）→ 可能记为 medium。
+- 大型压缩或编码过的源码（`lib/client.js` 里那段 base64 的游戏网页），可能记为 medium。
 
 安装时会先列出原因让用户确认。这一段是内联的游戏网页，不是混淆代码；
 `src/client.js` 与 `scripts/build.mjs` 都在仓库里，构建过程可复现。

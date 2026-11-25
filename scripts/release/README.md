@@ -1,6 +1,6 @@
 # 发布与上架脚本
 
-这四步按顺序跑，每一步默认**干跑**（只打印要做什么，不发请求、不推送、不发布），
+这四步按顺序跑，每一步默认**试跑**（只打印要做什么，不发请求、不推送、不发布），
 看清楚再加 `DRY_RUN=0` 真跑。
 
 ```sh
@@ -22,17 +22,17 @@ bash scripts/release/4-verify.sh                # 只读，随时可跑
 
 | 需要 | 怎么来 |
 |---|---|
-| `GITHUB_TOKEN` | GitHub → Settings → Developer settings → Tokens (classic) → 勾 `repo`。第 1 步要建仓库，fine-grained 令牌会更麻烦，classic 省事 |
+| `GITHUB_TOKEN` | 打开 GitHub 的 Settings，进 Developer settings，选 Tokens (classic)，勾上 `repo`。第 1 步要建仓库，细粒度令牌要多配几项权限，classic 省事 |
 | npm 登录 | `npm login`（交互）；有令牌就 `export NPM_TOKEN=...`，脚本会用一个临时 `.npmrc`，用完删掉 |
-| 顺序 | 必须 1 → 2 → 3。市场只收 npm 上已经存在的精确版本，截图链接也要仓库推上去之后才不是 404 |
+| 顺序 | 必须按 1、2、3 的顺序跑。市场只收 npm 上已经存在的精确版本，截图链接也要仓库推上去之后才不是 404 |
 
 ## 脚本都做了什么
 
 | 脚本 | 动作 | 可逆吗 |
 |---|---|---|
-| `1-push-repo.sh` | 仓库不存在就建公开仓库 → 用临时 askpass 推 `main` → 补 `dsh-plugin` 等 topic | 推送可撤回；**建公开仓库不可逆**，所以会先问 |
-| `2-publish-npm.sh` | 重跑构建与 4 项自检 → 检查 tarball 只有该有的 7 个文件 → 确认线上没有同名版本 → `npm publish --access public --ignore-scripts` → `npm view` 核对 | **不可逆**，npm 不允许覆盖已发布版本 |
-| `3-submit-market.sh` | fork `ccch1mneyyy/dsh-go-market` → 在 fork 的 main 上写 `plugins/<条目>.json` → 对上游 `main` 开 PR | PR 可以关；合并由市场自动检查决定 |
+| `1-push-repo.sh` | 仓库不存在就建公开仓库，用临时 askpass 推 `main`，再补 `dsh-plugin` 等 topic | 推送可撤回；**建公开仓库不可逆**，所以会先问 |
+| `2-publish-npm.sh` | 重跑构建与 4 项自检，检查 tarball 只有该有的 7 个文件，确认线上没有同名版本，再跑 `npm publish --access public --ignore-scripts`，最后用 `npm view` 核对 | **不可逆**，npm 不允许覆盖已发布版本 |
+| `3-submit-market.sh` | fork `ccch1mneyyy/dsh-go-market`，在 fork 的 main 上写 `plugins/<条目>.json`，再对上游 `main` 开 PR | PR 可以关；合并由市场自动检查决定 |
 | `4-verify.sh` | 只读：npm、dshfind 索引、官方市场索引各查一遍 | 改不了任何东西 |
 
 ## 令牌怎么用才不会漏
@@ -51,7 +51,7 @@ bash scripts/release/4-verify.sh                # 只读，随时可跑
 
 ```sh
 GITHUB_TOKEN=... DSH_PKG_OVERRIDE=dsh-context DSH_VERSION_OVERRIDE=0.78.2 \
-  bash scripts/release/3-submit-market.sh        # 干跑，不写不提交
+  bash scripts/release/3-submit-market.sh        # 试跑，不写不提交
 ```
 
 脚本会在开头说明「正在用排练用的包名/版本」。真发布时不要设这两个变量。
@@ -66,5 +66,5 @@ GITHUB_TOKEN=... DSH_PKG_OVERRIDE=dsh-context DSH_VERSION_OVERRIDE=0.78.2 \
 | 第 2 步：`E409 version exists` | 同名版本已存在，改 `package.json` 的 `version`，不要覆盖 |
 | 第 3 步：`npm 上没有 ...` | 第 2 步没成功，市场只收精确版本 |
 | 第 3 步：PR 打不开、返回 422 | fork 里已经有开着的 PR，去 GitHub 上看一眼 |
-| 第 4 步：索引还是 ⏳ | 正常。发现任务与索引重建都是定时的，过几小时再跑 |
+| 第 4 步：索引显示「[等待]」 | 正常。发现任务与索引重建都是定时的，过几小时再跑 |
 | App 里搜不到 | 确认在「全部」分区搜、包名完整、以及插件是否已合并进市场索引 |

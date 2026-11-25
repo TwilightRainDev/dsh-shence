@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # 第三步：给官方插件市场提条目。
 #
-# 做法：fork ccch1mneyyy/dsh-go-market → 在该 fork 上写一个
-# plugins/@twilightrain__dsh-shence.json（内容取自 market/entry.json）→ 对上游 main 开 PR。
+# 做法：先 fork ccch1mneyyy/dsh-go-market，再在 fork 上写一个
+# plugins/@twilightrain__dsh-shence.json（内容取自 market/entry.json），最后对上游 main 开 PR。
 # 一个 PR 只加这一个文件，符合市场的「一次一个条目」规则。
 #
 # 用法：
 #   export GITHUB_TOKEN=...
-#   bash scripts/release/3-submit-market.sh              # 干跑
+#   bash scripts/release/3-submit-market.sh              # 试跑
 #   DRY_RUN=0 bash scripts/release/3-submit-market.sh    # 真提
 #
 # 前提：npm 上已经有 package.json 里这个精确版本。
@@ -22,18 +22,18 @@ require_github_token
 
 MARKET_REPO="${UPSTREAM##*/}"
 if [ "${PKG#@}" != "$PKG" ]; then
-  # 带 scope：@scope/name → plugins/@scope__name.json
+  # 带 scope：@scope/name 写成 plugins/@scope__name.json
   rest="${PKG#@}"
   ENTRY_PATH="plugins/@${rest/\//__}.json"
 else
-  # 无 scope：name → plugins/name.json
+  # 无 scope：name 写成 plugins/name.json
   ENTRY_PATH="plugins/$PKG.json"
 fi
 
 say "包：$PKG@$VERSION"
 say "条目文件：$ENTRY_PATH"
 say "上游：$UPSTREAM"
-say "模式：$([ "$DRY_RUN" = "1" ] && echo '干跑（不写文件、不开 PR）' || echo '真跑')"
+say "模式：$([ "$DRY_RUN" = "1" ] && echo '试跑（不写文件、不开 PR）' || echo '真跑')"
 
 say ""
 say "1) 确认 npm 上有这个精确版本"
@@ -80,7 +80,7 @@ me="$(api GET /user | read_json login || true)"
 if [ -z "$me" ]; then
   if dry; then
     me="$OWNER"
-    say "   干跑：令牌没验证，暂按 $me 走"
+    say "   试跑：令牌没验证，暂按 $me 走"
   else
     die "拿不到当前 GitHub 账号，令牌可能无效或没有 repo 权限"
   fi
@@ -95,7 +95,7 @@ if printf '%s' "$fork_state" | grep -q '"full_name"'; then
 else
   confirm "要在 $me 名下 fork $UPSTREAM 吗？（只是建 fork，不改上游）"
   if dry; then
-    say "   [dry-run] POST /repos/$UPSTREAM/forks"
+    say "   [试跑] POST /repos/$UPSTREAM/forks"
   else
     forked="$(api POST "/repos/$UPSTREAM/forks" /dev/null)"
     if ! printf '%s' "$forked" | grep -q '"full_name"'; then
@@ -120,7 +120,7 @@ if printf '%s' "$existing" | grep -q '"sha"'; then
 fi
 confirm "在 $me/$MARKET_REPO 的 main 上提交 $ENTRY_PATH（版本 $VERSION）？"
 if dry; then
-  say "   [dry-run] PUT /repos/$me/$MARKET_REPO/contents/$ENTRY_PATH"
+  say "   [试跑] PUT /repos/$me/$MARKET_REPO/contents/$ENTRY_PATH"
 else
   payload="$(mktemp)"
   python3 - "$entry_file" "$sha" "$VERSION" "$payload" <<'PY'
@@ -165,7 +165,7 @@ text=open(body_file,encoding="utf-8").read()
 json.dump({"title":title,"head":"%s:main"%head,"base":"main","body":text},open(out,"w"))
 PY
 if dry; then
-  say "  [dry-run] POST /repos/$UPSTREAM/pulls（标题：Add $PKG $VERSION）"
+  say "  [试跑] POST /repos/$UPSTREAM/pulls（标题：Add $PKG $VERSION）"
 else
   pr="$(api POST "/repos/$UPSTREAM/pulls" "$payload" || true)"
   rm -f "$payload" "$pr_body"

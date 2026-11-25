@@ -5,7 +5,7 @@
 # 同名同版本已经发过就停下，不会覆盖。
 #
 # 用法：
-#   bash scripts/release/2-publish-npm.sh              # 干跑
+#   bash scripts/release/2-publish-npm.sh              # 试跑
 #   DRY_RUN=0 bash scripts/release/2-publish-npm.sh    # 真发
 #
 # 登录方式二选一：
@@ -20,10 +20,10 @@ DRY_RUN="${DRY_RUN:-1}"
 export DRY_RUN
 
 say "包：$PKG@$VERSION"
-say "模式：$([ "$DRY_RUN" = "1" ] && echo '干跑（不发布）' || echo '真跑')"
+say "模式：$([ "$DRY_RUN" = "1" ] && echo '试跑（不发布）' || echo '真跑')"
 
 say ""
-say "1) 构建 + 自检 + 打包检查（本地操作，干跑也照做）"
+say "1) 构建 + 自检 + 打包检查（本地操作，试跑时也照做）"
 node scripts/build.mjs
 node --test --test-reporter=dot test/plugin.test.js
 node --check lib/client.js
@@ -74,7 +74,7 @@ if [ -z "$who" ] && [ -n "${NPM_TOKEN:-}" ]; then
 fi
 if [ -z "$who" ]; then
   if dry; then
-    say "   干跑：当前没登录；真跑前先 npm login，或者 export NPM_TOKEN=..."
+    say "   试跑：当前没登录；真跑前先 npm login，或者 export NPM_TOKEN=..."
     who="(未登录)"
   else
     die "npm 没登录。先跑 npm login，或者 export NPM_TOKEN=... 再重跑。"
@@ -96,7 +96,7 @@ say ""
 say "4) 发布"
 confirm "要把 $PKG@$VERSION 公开发布到 npm 吗？这一步发出去就收不回。"
 if dry; then
-  say "  [dry-run] npm publish --access public --ignore-scripts"
+  say "  [试跑] npm publish --access public --ignore-scripts"
 else
   if [ -n "$npmrc" ]; then
     npm publish --access public --ignore-scripts --userconfig "$npmrc"
@@ -108,7 +108,7 @@ fi
 say ""
 say "5) 核对线上元数据"
 if dry; then
-  say "  [dry-run] npm view $PKG name version license repository dist.integrity --json"
+  say "  [试跑] npm view $PKG name version license repository dist.integrity --json"
 else
   npm view "$PKG" name version license repository dist.integrity --json
 fi
