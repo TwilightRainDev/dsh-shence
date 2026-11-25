@@ -1,0 +1,5 @@
+# 安装层：把本包挂进 DSH 的插件树。
+# id 与 package.json 的 name 分开写：id 是本行在配置里的名字，name 是 npm 包名。
+- insert:
+    - id: dsh-shence
+      name: "@twilightrain/dsh-shence"
