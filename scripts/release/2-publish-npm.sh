@@ -137,20 +137,47 @@ publish_args=(--access public --ignore-scripts)
 if [ -n "${NPM_OTP:-}" ]; then
   publish_args+=(--otp "$NPM_OTP")
 fi
+if [ -n "$npmrc" ]; then
+  publish_args+=(--userconfig "$npmrc")
+fi
+
+# WSL 里 xdg-open 装着但开不起来，npm 会把它当成失败，整条认证就断了。
+# 让 npm 不去开浏览器、只把网址打出来，由人复制到 Windows 浏览器，是最稳的一条。
+if [ -n "${WSL_DISTRO_NAME:-}" ]; then
+  publish_args+=(--browser=false)
+fi
+
+if interactive_terminal; then
+  say "   输出方式：直接接到终端，npm 的确认流程能走通"
+else
+  say "   输出方式：接了管道。npm 在这种环境里会跳过确认、直接判失败，"
+  say "   要在真终端里单独跑这一步。"
+fi
+
+if [ -n "${WSL_DISTRO_NAME:-}" ]; then
+  say "   在 WSL 里：npm 不会自己开浏览器，它会把确认网址打在终端上，"
+  say "   复制到 Windows 浏览器打开、按提示确认，这边会自己继续。"
+fi
+
 if dry; then
   say "  [试跑] npm publish ${publish_args[*]}"
 else
   publish_log="$(mktemp)"
   set +e
-  if [ -n "$npmrc" ]; then
-    npm publish "${publish_args[@]}" --userconfig "$npmrc" 2>&1 | tee "$publish_log"
+  if interactive_terminal; then
+    # 不套管道，让 npm 拿到真的终端，认证流程才走得下去
+    npm publish "${publish_args[@]}"
+    status=$?
+    log_for_check="$(ls -t "$HOME"/.npm/_logs/*-debug-0.log 2>/dev/null | head -1)"
+    [ -n "$log_for_check" ] || log_for_check="$publish_log"
   else
     npm publish "${publish_args[@]}" 2>&1 | tee "$publish_log"
+    status="${PIPESTATUS[0]}"
+    log_for_check="$publish_log"
   fi
-  status="${PIPESTATUS[0]}"
   set -e
   if [ "$status" -ne 0 ]; then
-    explain_publish_failure "$publish_log"
+    explain_publish_failure "$log_for_check"
     rm -f "$publish_log"
     die "发布没成功，上面是 npm 的原始输出。"
   fi

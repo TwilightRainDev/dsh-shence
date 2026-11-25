@@ -66,6 +66,7 @@ GITHUB_TOKEN=... DSH_PKG_OVERRIDE=dsh-context DSH_VERSION_OVERRIDE=0.78.2 \
 | 第 2 步：`E409 version exists` | 同名版本已存在，改 `package.json` 的 `version`，不要覆盖 |
 | 第 2 步：`E403` 提到 two-factor | npm 要求先开两步验证。npm 现在只提供安全密钥（WebAuthn），不再支持新增验证器应用；开好之后重跑，发布时在浏览器里确认一下 |
 | 第 2 步：问「验证码怎么填」 | 新账号没有验证码这一步，`NPM_OTP` 只对早先配过验证器应用的账号有用 |
+| 第 2 步：打印 `npmjs.com/auth/cli/...` 网址 | 这是 npm 要你用浏览器确认一次。在 WSL 里脚本会让 npm 只打印网址不开浏览器，把它复制到 Windows 浏览器打开确认，终端这边会自己继续；确认窗口大约五分钟 |
 | 第 3 步：`npm 上没有 ...` | 第 2 步没成功，市场只收精确版本 |
 | 第 3 步：PR 打不开、返回 422 | fork 里已经有开着的 PR，去 GitHub 上看一眼 |
 | 第 4 步：索引显示「[等待]」 | 正常。发现任务与索引重建都是定时的，过几小时再跑 |

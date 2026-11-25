@@ -96,11 +96,24 @@ confirm() {
 
 dry() { [ "${DRY_RUN:-0}" = "1" ]; }
 
+# npm 只有在标准输入和标准输出都是终端时，才会自己弹出「用浏览器确认」那一步；
+# 输出一旦接了管道（tee、重定向），它就判定不是交互环境，直接报 EOTP 退出。
+# 所以发布这一步要按这个判断决定要不要套管道。
+interactive_terminal() { [ -t 0 ] && [ -t 1 ]; }
+
 # npm 发布失败时把日志里的关键字翻成人话。只解释这一个常见原因，
 # 其余情况把 npm 的原始输出留给使用者。
 explain_publish_failure() {
   local log="$1"
-  if grep -qiE "two-factor|one-time password|bypass 2fa|EOTP" "$log"; then
+  if grep -qiE "EOTP|auth/cli|doneUrl|authId" "$log"; then
+    say ""
+    say "npm 要你用浏览器确认一次（账号开的两步验证是安全密钥）。"
+    say "在真终端里重跑，它会把确认网址打出来，复制到 Windows 浏览器打开并确认，"
+    say "npm 会自己接着发布（网址大约五分钟内有效）。"
+    say "如果这一步是被管道掐断的，会看到「不是交互终端」那个判断，重跑一次就行。"
+    return 0
+  fi
+  if grep -qiE "two-factor|one-time password|bypass 2fa" "$log"; then
     say ""
     say "npm 拦下来的原因是「发布要求两步验证」，不是包本身的问题。两条路："
     say "  1. 打开 https://www.npmjs.com/settings/${NPM_USER:-你的用户名}/profile ，"
