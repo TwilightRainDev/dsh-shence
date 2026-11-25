@@ -71,6 +71,16 @@ npm test        # 离线自检：字节一致性、清单、注册的面板、�
 npm run check   # 语法检查
 ```
 
+发布与上架不用记事本照着做，`scripts/release/` 下有四个脚本（默认干跑，看清楚再真跑），
+用法写在 `scripts/release/README.md`：
+
+```sh
+bash scripts/release/1-push-repo.sh       # 建/推仓库 + 补 topic
+bash scripts/release/2-publish-npm.sh     # 构建、自检、发布 npm
+bash scripts/release/3-submit-market.sh   # fork 市场仓库、写条目、开 PR
+bash scripts/release/4-verify.sh          # 四个状态各查一遍（只读）
+```
+
 目录：
 
 ```
@@ -81,7 +91,8 @@ lib/client.js      构建产物，发布用，不要手改
 scripts/build.mjs  构建脚本
 test/              离线自检
 screenshots/       上架用的界面截图
-market/            上架申请材料（entry.json 与提交步骤，不随 npm 包发布）
+market/            上架申请材料（entry.json 与提交流程，不随 npm 包发布）
+scripts/release/   发布脚本（默认干跑）
 ```
 
 改游戏内容的流程：换掉 `assets/game.html` → 改 `test/plugin.test.js` 里记的 sha256 → `npm run build` → `npm test`。
