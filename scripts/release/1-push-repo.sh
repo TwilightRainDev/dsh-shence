@@ -18,6 +18,7 @@ cd "$(dirname "$0")/../.."
 DRY_RUN="${DRY_RUN:-1}"
 export DRY_RUN
 require_github_token
+verify_github_token
 
 say "仓库：$OWNER/$REPO"
 say "分支：$(git rev-parse --abbrev-ref HEAD)"

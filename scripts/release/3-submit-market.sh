@@ -19,6 +19,7 @@ cd "$(dirname "$0")/../.."
 DRY_RUN="${DRY_RUN:-1}"
 export DRY_RUN
 require_github_token
+verify_github_token
 
 MARKET_REPO="${UPSTREAM##*/}"
 if [ "${PKG#@}" != "$PKG" ]; then

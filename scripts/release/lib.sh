@@ -28,16 +28,48 @@ die() { printf '\n停：%s\n' "$*" >&2; exit 1; }
 
 # 有令牌就校验形状，没有令牌的步骤（npm 发布）不强制。
 require_github_token() {
-  if [ -z "${GITHUB_TOKEN:-}" ]; then
-    die "没有 GITHUB_TOKEN。去 GitHub 设置里建一个带 repo 权限的令牌，然后：
-    export GITHUB_TOKEN=...（不要写进任何文件，也不要粘进聊天）"
+  local token="${GITHUB_TOKEN:-}"
+  if [ -z "$token" ]; then
+    cat >&2 <<'MSG'
+停：没有拿到 GITHUB_TOKEN。
+
+怎么建：
+  1. 浏览器打开 GitHub，右上角头像，Settings
+  2. 左侧最下面 Developer settings
+  3. Personal access tokens，选 Tokens (classic)
+  4. Generate new token (classic)，Note 随便写，Expiration 选个日子，勾上 repo
+  5. 生成后复制那一串，以 ghp_ 开头
+
+然后在这个终端里：
+  export GITHUB_TOKEN=粘贴真令牌
+（只放环境变量里，别写进文件，也别粘进聊天）
+MSG
+    exit 1
   fi
-  case "$GITHUB_TOKEN" in
-    ghp_*|github_pat_*|gho_*|ghu_*) ;;
-    *) die "GITHUB_TOKEN 看着不像 GitHub 的令牌（应以 ghp_ 或 github_pat_ 开头）" ;;
+  case "$token" in
+    *...*|*…*|*'<'*|*令牌*|*你的*)
+      die "GITHUB_TOKEN 里是说明文字，不是真令牌（看着有省略号或中文）。换成 ghp_ 开头的那一串，长度约四十位。"
+      ;;
   esac
-  if [ "${#GITHUB_TOKEN}" -lt 20 ]; then
-    die "GITHUB_TOKEN 太短，像是没复制全"
+  case "$token" in
+    ghp_*|github_pat_*|gho_*|ghu_*) ;;
+    *) die "GITHUB_TOKEN 开头不对：应当以 ghp_ 或 github_pat_ 开头，你现在这串是 ${#token} 位，开头是 ${token:0:3}" ;;
+  esac
+  if [ "${#token}" -lt 20 ]; then
+    die "GITHUB_TOKEN 太短（${#token} 位），像是没复制全"
+  fi
+}
+
+# 令牌形状对了不代表能用：先去问一次 GitHub 这串是谁的。
+verify_github_token() {
+  local who
+  who="$(api GET /user | read_json login || true)"
+  if [ -z "$who" ]; then
+    die "GitHub 没认这串令牌（可能过期、复制多了空格，或者没勾 repo 权限）"
+  fi
+  say "   令牌属于 GitHub 账号：$who"
+  if [ "$who" != "$OWNER" ]; then
+    say "   提醒：下面按 $OWNER 操作，但令牌属于 $who。两者不一致时，建仓库和提 PR 会失败。"
   fi
 }
 
