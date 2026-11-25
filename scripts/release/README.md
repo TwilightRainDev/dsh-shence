@@ -64,6 +64,7 @@ GITHUB_TOKEN=... DSH_PKG_OVERRIDE=dsh-context DSH_VERSION_OVERRIDE=0.78.2 \
 | 第 1 步：推送被拒 `non-fast-forward` | 远端已有提交，先 `git pull --rebase origin main` 再跑 |
 | 第 2 步：发布被拒 `403 scope` | 登录账号没有 `@twilightrain` 这个 scope 的发布权 |
 | 第 2 步：`E409 version exists` | 同名版本已存在，改 `package.json` 的 `version`，不要覆盖 |
+| 第 2 步：`E403` 提到 two-factor | npm 要求发布时带两步验证。账号里把两步验证设成「授权与写入」，重跑时加 `NPM_OTP=六位验证码`；或者改用绕过两步验证的细粒度令牌（npm 在收紧这条路） |
 | 第 3 步：`npm 上没有 ...` | 第 2 步没成功，市场只收精确版本 |
 | 第 3 步：PR 打不开、返回 422 | fork 里已经有开着的 PR，去 GitHub 上看一眼 |
 | 第 4 步：索引显示「[等待]」 | 正常。发现任务与索引重建都是定时的，过几小时再跑 |

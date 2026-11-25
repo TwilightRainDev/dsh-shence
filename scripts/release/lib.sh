@@ -96,6 +96,22 @@ confirm() {
 
 dry() { [ "${DRY_RUN:-0}" = "1" ]; }
 
+# npm 发布失败时把日志里的关键字翻成人话。只解释这一个常见原因，
+# 其余情况把 npm 的原始输出留给使用者。
+explain_publish_failure() {
+  local log="$1"
+  if grep -qiE "two-factor|one-time password|bypass 2fa|EOTP" "$log"; then
+    say ""
+    say "npm 拦下来的原因是「发布要求两步验证」，不是包本身的问题。两条路："
+    say "  1. 打开 https://www.npmjs.com/settings/${NPM_USER:-你的用户名}/profile ，"
+    say "     把两步验证设成「授权与写入」；然后带验证码重跑："
+    say "     NPM_OTP=六位验证码 DRY_RUN=0 bash scripts/release/2-publish-npm.sh"
+    say "  2. 或者建一个绕过两步验证的细粒度令牌（Granular Access Token），"
+    say "     范围勾上这个包的 scope 的读写，再用 NPM_TOKEN 走。"
+    say "     npm 正在收紧这种令牌，能走第 1 条就走第 1 条。"
+  fi
+}
+
 run() {
   if dry; then printf '  [试跑] %s\n' "$*"; else "$@"; fi
 }

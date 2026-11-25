@@ -93,20 +93,58 @@ case "$PKG" in
 esac
 
 say ""
-say "4) 发布"
-confirm "要把 $PKG@$VERSION 公开发布到 npm 吗？这一步发出去就收不回。"
-if dry; then
-  say "  [试跑] npm publish --access public --ignore-scripts"
-else
-  if [ -n "$npmrc" ]; then
-    npm publish --access public --ignore-scripts --userconfig "$npmrc"
-  else
-    npm publish --access public --ignore-scripts
+say "4) 看账号的两步验证设置"
+NPM_USER="$who"
+export NPM_USER
+tfa="$(npm profile get 2>/dev/null | sed -n 's/^two-factor auth: //p' | head -1)"
+tfa="${tfa:-未知}"
+say "   两步验证：$tfa"
+if [ "$tfa" = "disabled" ] && [ -z "${NPM_OTP:-}" ]; then
+  say ""
+  say "   npm 现在不允许两步验证关闭的账号直接发布，发出去也会被 403 拦下。先二选一："
+  say "   1. 打开 https://www.npmjs.com/settings/$who/profile ，把两步验证设成「授权与写入」，"
+  say "      然后带验证码重跑：NPM_OTP=六位验证码 DRY_RUN=0 bash scripts/release/2-publish-npm.sh"
+  say "   2. 或者建一个绕过两步验证的细粒度令牌，用 NPM_TOKEN 走（npm 正在收紧这条路）"
+  if ! dry; then
+    die "两步验证还没开，先按上面任一条准备好，再重跑这一步。什么都没发布。"
   fi
+fi
+if [ -n "${NPM_OTP:-}" ]; then
+  say "   会用你给的验证码一起发布"
+elif [ "$tfa" != "disabled" ] && [ "$tfa" != "未知" ]; then
+  say "   两步验证已经开着：发布时 npm 会当场问你要六位验证码。"
+  say "   不想被临时打断，就先 NPM_OTP=六位验证码 再跑。"
 fi
 
 say ""
-say "5) 核对线上元数据"
+say "5) 发布"
+confirm "要把 $PKG@$VERSION 公开发布到 npm 吗？这一步发出去就收不回。"
+publish_args=(--access public --ignore-scripts)
+if [ -n "${NPM_OTP:-}" ]; then
+  publish_args+=(--otp "$NPM_OTP")
+fi
+if dry; then
+  say "  [试跑] npm publish ${publish_args[*]}"
+else
+  publish_log="$(mktemp)"
+  set +e
+  if [ -n "$npmrc" ]; then
+    npm publish "${publish_args[@]}" --userconfig "$npmrc" 2>&1 | tee "$publish_log"
+  else
+    npm publish "${publish_args[@]}" 2>&1 | tee "$publish_log"
+  fi
+  status="${PIPESTATUS[0]}"
+  set -e
+  if [ "$status" -ne 0 ]; then
+    explain_publish_failure "$publish_log"
+    rm -f "$publish_log"
+    die "发布没成功，上面是 npm 的原始输出。"
+  fi
+  rm -f "$publish_log"
+fi
+
+say ""
+say "6) 核对线上元数据"
 if dry; then
   say "  [试跑] npm view $PKG name version license repository dist.integrity --json"
 else
