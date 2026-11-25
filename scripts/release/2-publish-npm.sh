@@ -110,10 +110,20 @@ if [ "$tfa" = "disabled" ] && [ -z "${NPM_OTP:-}" ]; then
   fi
 fi
 if [ -n "${NPM_OTP:-}" ]; then
+  # 只收六到八位数字。把说明文字或空格粘进来时，npm 只会回一句
+  # 「不是合法的 HTTP 头」，看不懂是在哪出的问题，所以在这里先拦。
+  case "$NPM_OTP" in
+    *[!0-9]*|"")
+      die "NPM_OTP 里不是验证码。它应当是验证器上那串纯数字（六到八位），你现在给的是：$NPM_OTP"
+      ;;
+  esac
+  if [ "${#NPM_OTP}" -lt 6 ] || [ "${#NPM_OTP}" -gt 8 ]; then
+    die "NPM_OTP 位数不对（六到八位数字），现在是 ${#NPM_OTP} 位"
+  fi
   say "   会用你给的验证码一起发布"
 elif [ "$tfa" != "disabled" ] && [ "$tfa" != "未知" ]; then
-  say "   两步验证已经开着：发布时 npm 会当场问你要六位验证码。"
-  say "   不想被临时打断，就先 NPM_OTP=六位验证码 再跑。"
+  say "   两步验证已经开着：不用准备验证码，发布时 npm 会当场问你要，"
+  say "   照着验证器上那串数字敲进去就行。"
 fi
 
 say ""
