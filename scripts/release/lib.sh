@@ -101,6 +101,35 @@ dry() { [ "${DRY_RUN:-0}" = "1" ]; }
 # 所以发布这一步要按这个判断决定要不要套管道。
 interactive_terminal() { [ -t 0 ] && [ -t 1 ]; }
 
+# 直接从注册表读，不用 npm view：包刚发布时 npm view 会抛一堆 404 噪音。
+registry_has_version() {
+  node --input-type=module -e '
+const [pkg, version] = process.argv.slice(1)
+try {
+  const response = await fetch("https://registry.npmjs.org/" + encodeURIComponent(pkg))
+  if (!response.ok) process.exit(1)
+  const data = await response.json()
+  process.exit(data.versions && data.versions[version] ? 0 : 1)
+} catch {
+  process.exit(1)
+}
+' "$1" "$2"
+}
+
+# 发布之后注册表要过一会儿才认，等一等再下结论。
+wait_for_registry() {
+  local pkg="$1" version="$2" seconds="${3:-180}" waited=0
+  while [ "$waited" -lt "$seconds" ]; do
+    if registry_has_version "$pkg" "$version"; then
+      return 0
+    fi
+    sleep 10
+    waited=$((waited + 10))
+    say "   还在等 npm 生效（已等 ${waited} 秒）"
+  done
+  registry_has_version "$pkg" "$version"
+}
+
 # npm 发布失败时把日志里的关键字翻成人话。只解释这一个常见原因，
 # 其余情况把 npm 的原始输出留给使用者。
 explain_publish_failure() {

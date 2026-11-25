@@ -187,10 +187,35 @@ fi
 say ""
 say "6) 核对线上元数据"
 if dry; then
-  say "  [试跑] npm view $PKG name version license repository dist.integrity --json"
+  say "  [试跑] 从注册表读回包名、版本、许可、仓库地址"
 else
-  npm view "$PKG" name version license repository dist.integrity --json
+  say "   npm 收下包之后，注册表要过一会儿才查得到，边等边查（最多三分钟）"
+  if wait_for_registry "$PKG" "$VERSION" 180; then
+    npm view "$PKG" name version license repository dist.integrity --json
+    say ""
+    say "   线上已经能查到。下一步：bash scripts/release/3-submit-market.sh"
+  else
+    staged="$(npm stage list "$PKG" 2>/dev/null | head -5)"
+    say ""
+    switch_stage=""
+    case "$staged" in
+      *"No staged"*|"") switch_stage="queue" ;;
+      *) switch_stage="staged" ;;
+    esac
+    if [ "$switch_stage" = "staged" ]; then
+      say "   这个版本进了待审队列，要先批准才会对外可见："
+      printf '%s\n' "$staged"
+      say ""
+      say "   去 npmjs.com 的 Staged Packages 页面点 Approve，认证一次；"
+      say "   或者在这里跑 npm stage approve <上面列出的编号>。"
+    else
+      say "   npm 已经收下这个包，只是还没对外可见。发布输出里那句 being processed"
+      say "   表示它在排队做扫描，常见要几分钟。这时注册表里那个 0.0.0-stage 是 npm"
+      say "   先占住包名用的占位版本，不是你的 0.1.0。"
+      say ""
+      say "   这不算失败：过几分钟跑 bash scripts/release/4-verify.sh 再看。"
+      say "   第 3 步也会自己再查一次，查不到会拦住，不会提一个线上还没有的版本。"
+    fi
+  fi
 fi
 
-say ""
-say "下一步：bash scripts/release/3-submit-market.sh"
