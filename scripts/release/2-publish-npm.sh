@@ -101,29 +101,33 @@ tfa="${tfa:-未知}"
 say "   两步验证：$tfa"
 if [ "$tfa" = "disabled" ] && [ -z "${NPM_OTP:-}" ]; then
   say ""
-  say "   npm 现在不允许两步验证关闭的账号直接发布，发出去也会被 403 拦下。先二选一："
-  say "   1. 打开 https://www.npmjs.com/settings/$who/profile ，把两步验证设成「授权与写入」，"
-  say "      然后带验证码重跑：NPM_OTP=六位验证码 DRY_RUN=0 bash scripts/release/2-publish-npm.sh"
-  say "   2. 或者建一个绕过两步验证的细粒度令牌，用 NPM_TOKEN 走（npm 正在收紧这条路）"
+  say "   npm 现在不允许两步验证关闭的账号直接发布，发出去也会被 403 拦下。两条路："
+  say "   1. 打开 https://www.npmjs.com/settings/$who/profile ，按页面提示开启两步验证（现在只能用安全密钥）。"
+  say "      开好之后重跑这一步，发布时 npm 会让你用安全密钥确认一下。"
+  say "   2. 或者建一个「绕过两步验证」的细粒度令牌，用 NPM_TOKEN 走（npm 正在收紧这条路）。"
   if ! dry; then
     die "两步验证还没开，先按上面任一条准备好，再重跑这一步。什么都没发布。"
   fi
 fi
 if [ -n "${NPM_OTP:-}" ]; then
-  # 只收六到八位数字。把说明文字或空格粘进来时，npm 只会回一句
-  # 「不是合法的 HTTP 头」，看不懂是在哪出的问题，所以在这里先拦。
+  # 只有早先配过验证器应用（TOTP）的账号才有六位数字可填，新账号已经不给配了。
+  # 把说明文字或空格粘进来时，npm 只回一句「不是合法的 HTTP 头」，看不懂问题在哪，所以先拦。
   case "$NPM_OTP" in
     *[!0-9]*|"")
-      die "NPM_OTP 里不是验证码。它应当是验证器上那串纯数字（六到八位），你现在给的是：$NPM_OTP"
+      die "NPM_OTP 里不是验证码。只有配过验证器应用的账号才需要它（六到八位数字），你现在给的是：$NPM_OTP"
       ;;
   esac
   if [ "${#NPM_OTP}" -lt 6 ] || [ "${#NPM_OTP}" -gt 8 ]; then
     die "NPM_OTP 位数不对（六到八位数字），现在是 ${#NPM_OTP} 位"
   fi
   say "   会用你给的验证码一起发布"
+elif [ "$tfa" = "auth-only" ]; then
+  say "   两步验证只保护授权类操作，发布不会再要第二次确认，直接发就行。"
+elif [ "$tfa" = "auth-and-writes" ]; then
+  say "   两步验证连写入也要确认：发布时 npm 会让你用安全密钥在浏览器里点一下。"
+  say "   它会把确认用的网址打在终端上，按提示打开就行（WSL 里打不开就复制到 Windows 浏览器）。"
 elif [ "$tfa" != "disabled" ] && [ "$tfa" != "未知" ]; then
-  say "   两步验证已经开着：不用准备验证码，发布时 npm 会当场问你要，"
-  say "   照着验证器上那串数字敲进去就行。"
+  say "   两步验证的当前模式是 $tfa，发布时按 npm 的提示走。"
 fi
 
 say ""

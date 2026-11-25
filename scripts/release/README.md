@@ -23,7 +23,7 @@ bash scripts/release/4-verify.sh                # 只读，随时可跑
 | 需要 | 怎么来 |
 |---|---|
 | `GITHUB_TOKEN` | 打开 GitHub 的 Settings，进 Developer settings，选 Tokens (classic)，勾上 `repo`。第 1 步要建仓库，细粒度令牌要多配几项权限，classic 省事 |
-| npm 登录 | `npm login`（交互）；有令牌就 `export NPM_TOKEN=...`，脚本会用一个临时 `.npmrc`，用完删掉。账号开了两步验证的话，发布时 npm 会当场问你要验证码，不用提前准备 |
+| npm 登录 | `npm login`（交互）；有令牌就 `export NPM_TOKEN=...`，脚本会用一个临时 `.npmrc`，用完删掉。账号开了两步验证的话，发布时 npm 会让你在浏览器里用安全密钥确认，不用提前准备验证码 |
 | 顺序 | 必须按 1、2、3 的顺序跑。市场只收 npm 上已经存在的精确版本，截图链接也要仓库推上去之后才不是 404 |
 
 ## 脚本都做了什么
@@ -64,7 +64,8 @@ GITHUB_TOKEN=... DSH_PKG_OVERRIDE=dsh-context DSH_VERSION_OVERRIDE=0.78.2 \
 | 第 1 步：推送被拒 `non-fast-forward` | 远端已有提交，先 `git pull --rebase origin main` 再跑 |
 | 第 2 步：发布被拒 `403 scope` | 登录账号没有 `@twilightrain` 这个 scope 的发布权 |
 | 第 2 步：`E409 version exists` | 同名版本已存在，改 `package.json` 的 `version`，不要覆盖 |
-| 第 2 步：`E403` 提到 two-factor | npm 要求发布时带两步验证。账号里把两步验证设成「授权与写入」，重跑这一步，发布时 npm 会当场问你要验证码；也可以提前用 `NPM_OTP` 给（只收六到八位数字） |
+| 第 2 步：`E403` 提到 two-factor | npm 要求先开两步验证。npm 现在只提供安全密钥（WebAuthn），不再支持新增验证器应用；开好之后重跑，发布时在浏览器里确认一下 |
+| 第 2 步：问「验证码怎么填」 | 新账号没有验证码这一步，`NPM_OTP` 只对早先配过验证器应用的账号有用 |
 | 第 3 步：`npm 上没有 ...` | 第 2 步没成功，市场只收精确版本 |
 | 第 3 步：PR 打不开、返回 422 | fork 里已经有开着的 PR，去 GitHub 上看一眼 |
 | 第 4 步：索引显示「[等待]」 | 正常。发现任务与索引重建都是定时的，过几小时再跑 |
